@@ -1,19 +1,20 @@
+import client.OrderClient;
+import client.UserClient;
+import model.Ingredient;
+import model.IngredientRequest;
 import com.github.javafaker.Faker;
 import io.qameta.allure.Description;
 import io.qameta.allure.junit4.DisplayName;
-import static org.junit.Assert.assertTrue;
-
 import model.*;
 import org.junit.Test;
 import com.fasterxml.jackson.core.JsonProcessingException;
-
 import java.util.ArrayList;
+import static org.junit.Assert.assertTrue;
 
-public class GetApiTest {
+public class OrderApiTest {
 
-    private final GetSteps getSteps = new GetSteps();
-    private final PostSteps postSteps = new PostSteps();
-    private final DeleteSteps deleteSteps = new DeleteSteps();
+    UserClient userClient = new UserClient();
+    OrderClient orderClient = new OrderClient();
     static Faker faker = new Faker();
     static String userEmail = faker.internet().emailAddress();
     static String userPassword = faker.internet().password();
@@ -24,7 +25,7 @@ public class GetApiTest {
     @Description("Basic test for api/ingredients")
     public void testGetIngredients() throws JsonProcessingException {
 
-        Ingredient ingredient = getSteps.getIngredients();
+        Ingredient ingredient = orderClient.getIngredients();
         assertTrue(ingredient.getData().size() > 1);
 
     }
@@ -34,7 +35,7 @@ public class GetApiTest {
     @Description("Test for api/orders without access token")
     public void testGetOrders() throws JsonProcessingException {
 
-        getSteps.getUserOrders()
+        orderClient.getUserOrders()
                 .then()
                 .assertThat().statusCode(401);
 
@@ -45,9 +46,9 @@ public class GetApiTest {
     @Description("Basic test for api/orders")
     public void testGetOrdersWithAccessToken() throws JsonProcessingException {
         User user = new User(userEmail, userPassword, userName);
-        String accessToken = postSteps.createUser(user).then().extract().path("accessToken");
+        String accessToken = userClient.createUser(user).then().extract().path("accessToken");
 
-        Ingredient ingredient = getSteps.getIngredients();
+        Ingredient ingredient = orderClient.getIngredients();
         ArrayList<BurgerIngredient> burgerIngredientList = ingredient.getData();
         ArrayList<String> ingredientList = new ArrayList<String>();
 
@@ -62,13 +63,12 @@ public class GetApiTest {
 
         IngredientRequest ingredientRequest = new IngredientRequest(accessToken, ingredientList);
 
-        postSteps.createOrder(ingredientRequest);
-        getSteps.getUserOrdersWithAccessToken(accessToken)
+        orderClient.createOrder(ingredientRequest);
+        orderClient.getUserOrdersWithAccessToken(accessToken)
                 .then()
                 .assertThat().statusCode(200);
 
-        deleteSteps.deleteUser(accessToken);
+        userClient.deleteUser(accessToken);
 
     }
-
 }

@@ -1,21 +1,24 @@
-import com.github.javafaker.Faker;
-import io.qameta.allure.Description;
-import io.qameta.allure.junit4.DisplayName;
+import client.OrderClient;
+import client.UserClient;
 import model.BurgerIngredient;
 import model.Ingredient;
 import model.IngredientRequest;
 import model.User;
+import com.github.javafaker.Faker;
+import io.qameta.allure.Description;
+import io.qameta.allure.junit4.DisplayName;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import java.util.ArrayList;
 import java.util.Arrays;
-
 import static org.junit.Assert.assertEquals;
 
 @RunWith(Parameterized.class)
 public class PostOrderParameterizedTest {
 
+    private static final UserClient userClient = new UserClient();
+    private static final OrderClient orderClient = new OrderClient();
     private final IngredientRequest ingredientRequest;
     private final int expected;
     static Faker faker = new Faker();
@@ -24,8 +27,6 @@ public class PostOrderParameterizedTest {
     static String userName = faker.name().username();
     static ArrayList<String> wrongIngredients = new ArrayList<String>(
             Arrays.asList("61c0c", "61c0c", "61c0c5a"));
-    private static final PostSteps postSteps = new PostSteps();
-    private static final GetSteps getSteps = new GetSteps();
 
 
     public PostOrderParameterizedTest(IngredientRequest ingredientRequest, int expected) {
@@ -36,9 +37,9 @@ public class PostOrderParameterizedTest {
     @Parameterized.Parameters
     public static Object[][] getResponseData() {
         User user = new User(userEmail, userPassword, userName);
-        String accessToken = postSteps.createUser(user).then().extract().path("accessToken");
+        String accessToken = userClient.createUser(user).then().extract().path("accessToken");
 
-        Ingredient ingredient = getSteps.getIngredients();
+        Ingredient ingredient = orderClient.getIngredients();
         ArrayList<BurgerIngredient> burgerIngredientList = ingredient.getData();
         ArrayList<String> ingredientList = new ArrayList<String>();
 
@@ -63,7 +64,7 @@ public class PostOrderParameterizedTest {
     @DisplayName("Check status code of /api/order")
     @Description("Parameterized test for /api/order endpoint")
     public void shouldBeOrderCreated() {
-        int actual = postSteps.getOrderCreationStatusCode(ingredientRequest);
+        int actual = orderClient.createOrder(ingredientRequest).statusCode();
         assertEquals(expected, actual);
     }
 
